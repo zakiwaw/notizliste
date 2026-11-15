@@ -1,0 +1,3 @@
+Fertig: erfassung/capture.js (Barcode mit tryHarder/tryRotate/tryInvert, 2-Treffer-Abstimmung, SSCC-Prüfziffer; AN/Reference mit Vorverarbeitung, Whitelist, Abstimmung pro Ziffer; Typ 1/2 und Drehung) – Testlauf erfassung/test/test.mjs: 8/8 Treffer, 0 falsche Werte; auf echtem iPhone ungetestet.
+Einbau: die 5 Schritte stehen oben in capture.js (createCapture → cap.feed(video) im Scan-Takt → bei r.fertig Werte übernehmen → cap.reset()); in die laufende App ist nichts eingebaut.
+Übernehmen: im Chat „Save to Github“ → Branch „erfassung“ wählen; später auf GitHub Pull Request erfassung → main, wenn es auf dem iPhone funktioniert.
