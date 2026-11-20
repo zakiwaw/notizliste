@@ -1,0 +1,4 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["frontend/public/tess/**", "frontend/public/zxing/**", "frontend/build/**", "node_modules/**"]
+}
