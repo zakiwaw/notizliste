@@ -222,11 +222,13 @@ export function createCapture({ readBarcodes, ocr, debug }) {
       if (debug) debug(name, bild);
       return (await ocr(bild)).replace(/\s/g, '');
     };
-    const an = await lies('an'), ref = await lies('ref');
+    // Bereits sicher gelesene Zone nicht erneut erkennen (halbiert die OCR-Zeit pro Frame)
+    const anFest = !!v.an.get(), refFest = !!v.ref.get();
+    const an = anFest ? '' : await lies('an'), ref = refFest ? '' : await lies('ref');
     const anOk = RE_AN.test(an), refOk = RE_TN.test(ref);
     if (anOk) v.an.add(an);
     if (refOk) v.ref.add(ref);
-    if (!anOk && !refOk) flip = !flip; // 180°-Rückfall, falls die Barcode-Richtung nicht stimmt
+    if (!anOk && !refOk && !anFest && !refFest) flip = !flip; // 180°-Rückfall, falls die Barcode-Richtung nicht stimmt
   }
 
   async function feed(quelle) {
@@ -272,3 +274,4 @@ export async function createTesseractOcr(Tesseract, options) {
     return (await worker.recognize(c)).data.text;
   };
 }
+

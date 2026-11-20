@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Zap, ZapOff, Keyboard } from "lucide-react";
-import { readBarcodes } from "@/lib/barcode";
+import { readBarcodesFast } from "@/lib/barcode";
 import { loadOcr } from "@/lib/ocr";
-import { createCapture } from "@/lib/capture";
+import { createCapture, ssccGueltig } from "@/lib/capture";
 import { anchor, refine, matrixFromAnchor, matrixFromPair, defaultMatrix, TN_OFFSET } from "@/lib/overlay";
 import { LABEL_TYPE_1, LABEL_TYPE_2 } from "@/lib/overlaySvg";
 import { buzz, beep } from "@/lib/feedback";
@@ -10,6 +10,10 @@ import { buzz, beep } from "@/lib/feedback";
 const FRAME = { w: 0.88, h: 0.62 };
 const RE_SSCC = /^00\d{18}$/, RE_TN = /^\d{10}$/;
 const clean = (t) => String(t).replace(/[()\s]/g, "");
+const isPair = (list) => {
+  const vals = list.map((c) => clean(c.text));
+  return vals.some(ssccGueltig) && vals.some((t) => RE_TN.test(t));
+};
 
 const cameraError = (e) => {
   if (!navigator.mediaDevices?.getUserMedia) return "Kamera wird in diesem Browser nicht unterstützt (HTTPS erforderlich).";
@@ -28,12 +32,13 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
     const W = window.innerWidth, H = window.innerHeight;
     return { t: 1, fast: false, m: defaultMatrix(W, H, W * FRAME.w, H * FRAME.h) };
   });
-  const st = useRef({ ignore: new Map(), busy: false, done: false, mt: 0, at: 0, ssSince: 0, ssLast: 0, tnLast: 0, arM: null, arT: 0, cur: null, g: null, v: null, now: 0, track: null });
+  const st = useRef({ ignore: new Map(), busy: false, done: false, mt: 0, at: 0, ssSince: 0, ssLast: 0, tnLast: 0, arM: null, arT: 0, arAt: 0, cur: null, g: null, v: null, now: 0, track: null });
   const cb = useRef({});
   cb.current = { onClose, onLabel, isDuplicate };
 
   useEffect(() => {
-    let stream, timer, stop = false;
+    const video = videoRef.current;
+    let stream, timer, frame, stop = false;
     loadOcr().catch(() => {});
 
     const setArSmooth = (n) => setAr((p) => (p.t === n.t && p.fast === n.fast && p.m.every((q, i) => Math.abs(q - n.m[i]) < 0.01) ? p : n));
@@ -54,8 +59,11 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
       if (tnC) s.tnLast = now;
       if (ssC) { s.ssSince = s.ssSince || now; s.ssLast = now; }
       else if (s.ssLast && now - s.ssLast > 800) { s.ssSince = 0; s.ssLast = 0; }
+      // Schablone höchstens alle 180 ms neu ausrichten – die Berechnung ist teuer und bremst das Lesen
+      if (ssC?.pts && s.arM && now - s.arAt < 180) return { ssC, tnC };
       let next = null;
       if (ssC?.pts) {
+        s.arAt = now;
         const an = refine(v, anchor(ssC.pts, g.ox, g.oy));
         if (tnC?.pts) {
           const at = refine(v, anchor(tnC.pts, g.ox, g.oy));
@@ -81,9 +89,10 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
     const cap = createCapture({
       readBarcodes: async (img, opts) => {
         const s = st.current;
-        const res = await readBarcodes(img, opts);
+        const res = await readBarcodesFast(img, opts, isPair);
         const found = res.filter((c) => !(s.ignore.get(clean(c.text)) > Date.now()));
-        s.cur = updateOverlay(found, s.g, s.v, s.now);
+        // Beide Barcodes da -> Etikett ist fertig, Schablone nicht mehr berechnen
+        if (!isPair(found)) s.cur = updateOverlay(found, s.g, s.v, s.now);
         return found;
       },
       ocr: async (bild) => (await loadOcr())(bild),
@@ -131,8 +140,8 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
         s.busy = true;
         try {
           const vw = v.videoWidth, vh = v.videoHeight, cw = v.clientWidth, ch = v.clientHeight;
-          const sc = Math.max(cw / vw, ch / vh), w = (cw * FRAME.w) / sc, h = (ch * FRAME.h) / sc, x = (vw - w) / 2, y = (vh - h) / 2;
-          c.width = w; c.height = h;
+          const sc = Math.max(cw / vw, ch / vh), w = Math.round((cw * FRAME.w) / sc), h = Math.round((ch * FRAME.h) / sc), x = (vw - w) / 2, y = (vh - h) / 2;
+          if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
           const ctx = c.getContext("2d", { willReadFrequently: true });
           ctx.drawImage(v, x, y, w, h, 0, 0, c.width, c.height);
           const img = ctx.getImageData(0, 0, c.width, c.height);
@@ -143,7 +152,10 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
         }
         s.busy = false;
       }
-      if (!stop) timer = setTimeout(tick, 30);
+      if (stop) return;
+      // Direkt mit dem nächsten Kamerabild weitermachen statt fest 30 ms zu warten
+      if (v?.requestVideoFrameCallback) frame = v.requestVideoFrameCallback(tick);
+      else timer = setTimeout(tick, 30);
     };
 
     (async () => {
@@ -167,6 +179,7 @@ export const Scanner = ({ onClose, onLabel, isDuplicate, onManual }) => {
     return () => {
       stop = true;
       clearTimeout(timer);
+      if (frame) video?.cancelVideoFrameCallback?.(frame);
       clearTimeout(st.current.mt);
       clearTimeout(st.current.at);
       stream?.getTracks().forEach((t) => t.stop());
