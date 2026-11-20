@@ -21,7 +21,7 @@ export const ExportSheet = ({ notes, onClose }) => {
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <h2 className="sheet-title">Liste exportieren</h2>
-        <p className="sheet-sub">{notes.length} {notes.length === 1 ? "Eintrag" : "Einträge"} (aktuelle Ansicht)</p>
+        <p className="sheet-sub">{notes.length} {notes.length === 1 ? "Eintrag" : "Einträge"}</p>
         <button className="sheet-item" onClick={() => run(() => shareText(toText(notes)))} data-testid="export-share-text">
           <Share2 size={20} /> <span>Als Text teilen<small>WhatsApp, Mail, Nachrichten…</small></span>
         </button>

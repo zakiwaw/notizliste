@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import "@/App.css";
 import { Plus, ScanBarcode, Keyboard, Share2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -7,10 +7,9 @@ import { Scanner } from "@/components/Scanner";
 import { NotePage } from "@/components/NotePage";
 import { NoteItem } from "@/components/NoteItem";
 import { ManualEntry } from "@/components/ManualEntry";
-import { FilterBar } from "@/components/FilterBar";
 import { ExportSheet } from "@/components/ExportSheet";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { matchesQuery, matchesStatus, ssccList, uid } from "@/lib/notes";
+import { uid } from "@/lib/notes";
 
 export default function App() {
   const n = useNotes();
@@ -20,15 +19,7 @@ export default function App() {
   const [notePage, setNotePage] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
 
-  const filtered = useMemo(() => n.notes.filter((x) => matchesQuery(x, query) && matchesStatus(x, status)), [n.notes, query, status]);
-  const stats = useMemo(() => ({
-    open: n.notes.filter((x) => !x.completed).length,
-    done: n.notes.filter((x) => x.completed).length,
-    sscc: n.notes.reduce((a, x) => a + (x.type === "label" ? ssccList(x).length : 0), 0),
-  }), [n.notes]);
   const hasCompleted = n.notes.some((x) => x.completed || Object.values(x.ssccDone || {}).some(Boolean));
 
   const withUndo = (message, mutate) => {
@@ -86,15 +77,11 @@ export default function App() {
         <button type="button" className="icon-btn scan" onClick={() => setScanning(true)} aria-label="Scannen" data-testid="open-scanner-button"><ScanBarcode size={22} /></button>
       </form>
 
-      {n.notes.length > 0 && <FilterBar query={query} onQuery={setQuery} status={status} onStatus={setStatus} stats={stats} />}
-
       {n.notes.length === 0 ? (
         <p className="empty" data-testid="empty-state">Noch keine Einträge.<br /><small>Etikett scannen, manuell eingeben oder eine Notiz schreiben.</small></p>
-      ) : filtered.length === 0 ? (
-        <p className="empty" data-testid="empty-filtered">Keine Treffer für diese Ansicht.</p>
       ) : (
         <ul className="notes" data-testid="note-list">
-          {filtered.map((x) => (
+          {n.notes.map((x) => (
             <NoteItem
               key={x.id}
               note={x}
@@ -125,7 +112,7 @@ export default function App() {
           onClose={() => setNotePage(null)}
         />
       )}
-      {exporting && <ExportSheet notes={filtered} onClose={() => setExporting(false)} />}
+      {exporting && <ExportSheet notes={n.notes} onClose={() => setExporting(false)} />}
       {confirmClear && (
         <ConfirmDialog
           title="Erledigte löschen?"
