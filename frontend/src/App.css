@@ -243,13 +243,23 @@ div.note-body { cursor: pointer; }
 .dialog h3 { margin: 0 0 8px; font-size: 19px; font-weight: 700; }
 .dialog p { margin: 0 0 14px; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
 
-/* Barcode-Vollbild (weiß, kontrastreich, damit ein Scanner ihn gut liest) */
-.bc { position: fixed; inset: 0; z-index: 70; background: #fff; color: #000; overflow: hidden; animation: fade 0.15s ease-out; }
-.bc-stage { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px); }
-.bc-stage.wide { inset: auto; top: 0; left: 100%; width: 100dvh; height: 100dvw; transform-origin: 0 0; transform: rotate(90deg); }
+/* Barcode-Fenster: iOS-Sheet (Griff, runde Ecken, folgt dem Finger); Inhalt weiß und kontrastreich für Scanner */
+.bc { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.45); touch-action: none; overscroll-behavior: contain; animation: fade 0.2s ease-out; }
+.bc-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top) + 10px);
+  background: #fff; color: #000; border-radius: 22px 22px 0 0; overflow: hidden;
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.25); will-change: transform;
+  animation: bcIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bc-sheet.wide { top: 0; border-radius: 0; }
+@keyframes bcIn { from { transform: translateY(100%); } to { transform: none; } }
+.bc-handle { position: absolute; top: 8px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: 999px; background: #c7c7cc; z-index: 1; }
+.bc-sheet.wide .bc-handle { display: none; }
+.bc-stage { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 30px 16px calc(env(safe-area-inset-bottom) + 16px); }
+.bc-stage.wide { inset: auto; top: 0; left: 100%; width: 100dvh; height: 100dvw; transform-origin: 0 0; transform: rotate(90deg); padding: 16px; }
 .bc-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .bc-btn { border: 0; border-radius: 999px; background: #efeff4; color: #111114; font-size: 15px; font-weight: 600; padding: 10px 16px; display: inline-flex; align-items: center; gap: 8px; }
 .bc-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
 .bc-svg { display: block; background: #fff; max-width: none; }
 .bc-code { font-family: ui-monospace, Menlo, monospace; font-size: 18px; font-weight: 600; letter-spacing: 0.04em; word-break: break-all; text-align: center; }
-.bc-hint { color: #8e8e93; font-size: 13px; font-weight: 600; }
+.bc-hint { color: #8e8e93; font-size: 13px; font-weight: 600; text-align: center; }
