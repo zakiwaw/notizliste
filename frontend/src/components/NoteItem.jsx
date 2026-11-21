@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { SsccRow } from "@/components/SsccRow";
 import { ssccList, isSsccDone } from "@/lib/notes";
 
-export const NoteItem = ({ note, onToggle, onRemove, onEditSscc, onToggleSscc }) => {
+export const NoteItem = ({ note, onToggle, onRemove, onEditSscc, onToggleSscc, onShowSscc }) => {
   const isLabel = note.type === "label";
   const Body = isLabel ? "div" : "button";
   return (
@@ -27,6 +27,7 @@ export const NoteItem = ({ note, onToggle, onRemove, onEditSscc, onToggleSscc })
                 done={isSsccDone(note, c)}
                 onToggle={() => onToggleSscc(note.id, c)}
                 onEdit={() => onEditSscc(note.id, c)}
+                onShow={() => onShowSscc(c)}
               />
             ))}
           </span>

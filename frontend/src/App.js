@@ -7,6 +7,7 @@ import { Scanner } from "@/components/Scanner";
 import { NotePage } from "@/components/NotePage";
 import { NoteItem } from "@/components/NoteItem";
 import { ManualEntry } from "@/components/ManualEntry";
+import { BarcodeSheet } from "@/components/BarcodeSheet";
 import { ExportSheet } from "@/components/ExportSheet";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { uid } from "@/lib/notes";
@@ -17,6 +18,7 @@ export default function App() {
   const [scanning, setScanning] = useState(false);
   const [manual, setManual] = useState(false);
   const [notePage, setNotePage] = useState(null);
+  const [barcode, setBarcode] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -89,6 +91,7 @@ export default function App() {
               onRemove={(id) => withUndo("Eintrag gelöscht", () => n.remove(id))}
               onEditSscc={(id, code) => setNotePage({ id, code })}
               onToggleSscc={n.toggleSscc}
+              onShowSscc={setBarcode}
             />
           ))}
         </ul>
@@ -112,6 +115,7 @@ export default function App() {
           onClose={() => setNotePage(null)}
         />
       )}
+      {barcode && <BarcodeSheet code={barcode} onClose={() => setBarcode(null)} />}
       {exporting && <ExportSheet notes={n.notes} onClose={() => setExporting(false)} />}
       {confirmClear && (
         <ConfirmDialog

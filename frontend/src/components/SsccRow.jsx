@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 
-export const SsccRow = ({ code, text, opts, done, onToggle, onEdit }) => {
+export const SsccRow = ({ code, text, opts, done, onToggle, onEdit, onShow }) => {
   const stop = (e) => e.stopPropagation();
   return (
     <span className={`note-child${done ? " sn-is-done" : ""}`} onClick={stop} data-testid={`sscc-row-${code}`}>
@@ -15,7 +15,15 @@ export const SsccRow = ({ code, text, opts, done, onToggle, onEdit }) => {
           {done ? "✓" : ""}
         </button>
         <em>SSCC</em>
-        <span className="sn-code">{code}</span>
+        <button
+          type="button"
+          className="sn-code"
+          aria-label="SSCC als Barcode anzeigen"
+          data-testid={`sscc-code-${code}`}
+          onClick={(e) => { e.stopPropagation(); onShow(); }}
+        >
+          {code}
+        </button>
         <button
           type="button"
           className={`sn-btn${text || opts?.length ? " has" : ""}`}
