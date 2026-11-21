@@ -5,6 +5,7 @@ import { gs1128Widths } from "@/lib/code128";
 const QUIET = 10; // Ruhezone links/rechts in Modulen
 const CLOSE_DIST = 110; // so weit nach unten ziehen -> schließt
 const CLOSE_SPEED = 0.6; // oder schneller als so viele px/ms (Wisch) -> schließt
+const START_ZONE = 0.5; // Wischen zählt nur, wenn der Finger in der oberen Hälfte des Bildschirms startet
 const ANIM_MS = 220;
 
 export const BarcodeSheet = ({ code, onClose }) => {
@@ -37,6 +38,7 @@ export const BarcodeSheet = ({ code, onClose }) => {
   const onTouchStart = (e) => {
     if (closing.current) return;
     const y = e.touches[0].clientY;
+    if (y > window.innerHeight * START_ZONE) return; // nur Wischen aus der oberen Hälfte schließt
     drag.current = { on: true, y0: y, y, t: e.timeStamp, v: 0, dy: 0 };
     setSettling(false);
   };
@@ -118,7 +120,7 @@ export const BarcodeSheet = ({ code, onClose }) => {
               {bars.map(([x, w]) => <rect key={x} x={x} width={w} height="1" fill="#000" />)}
             </svg>
             <div className="bc-code" data-testid="barcode-code">{code}</div>
-            <div className="bc-hint">SSCC · GS1-128 · zum Schließen nach unten wischen</div>
+            <div className="bc-hint">SSCC · GS1-128 · oben nach unten wischen zum Schließen</div>
           </div>
         </div>
       </div>
